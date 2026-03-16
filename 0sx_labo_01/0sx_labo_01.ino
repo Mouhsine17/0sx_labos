@@ -1,4 +1,3 @@
-
 int valMax = 255;
 int valMin = 0;
 int nbFois = 4;        
