@@ -2,6 +2,7 @@
 #include <DHT.h>
 #include <OneButton.h>
 #include <HCSR04.h>
+#include <AccelStepper.h>
 
 #define PIN_PHOTO A0
 #define PIN_BOUTON 4
@@ -10,6 +11,17 @@
 #define PIN_TRIG 12
 #define PIN_ECHO 11
 #define DHT_TYPE DHT11
+
+#define MOTOR_INTERFACE_TYPE 4
+#define IN1 8
+#define IN2 6
+#define IN3 5
+#define IN4 3
+
+#define MOTEUR_VITESSE_MAX 500
+#define MOTEUR_ACCELERATION 100
+#define MOTEUR_VITESSE 200
+#define MOTEUR_TOUR_COMPLET 2038
 
 #define SEUIL_LED 30
 
@@ -34,6 +46,7 @@ LCD_I2C lcd(0x27, 16, 2);
 DHT dht(PIN_DHT, DHT_TYPE);
 OneButton bouton(PIN_BOUTON, true);
 HCSR04 hc(PIN_TRIG, PIN_ECHO);
+AccelStepper myStepper(MOTOR_INTERFACE_TYPE, IN1, IN3, IN2, IN4);
 
 enum Etat {
   BOOT,
@@ -80,6 +93,11 @@ void setup() {
   lcd.backlight();
   dht.begin();
 
+  myStepper.setMaxSpeed(MOTEUR_VITESSE_MAX);
+  myStepper.setAcceleration(MOTEUR_ACCELERATION);
+  myStepper.setSpeed(MOTEUR_VITESSE);
+  myStepper.moveTo(MOTEUR_TOUR_COMPLET);
+
   bouton.attachClick(onSimpleClic);
   bouton.attachDoubleClick(onDoubleClic);
   bouton.setClickTicks(CLICK_TICKS);
@@ -96,6 +114,12 @@ void loop() {
   unsigned long maintenant = millis();
 
   bouton.tick();
+
+  if (myStepper.distanceToGo() == 0) {
+    myStepper.moveTo(-myStepper.currentPosition());
+  }
+
+  myStepper.run();
 
   switch (etatCourant) {
     case BOOT:
